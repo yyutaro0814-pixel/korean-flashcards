@@ -1,3 +1,54 @@
-body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-#card { font-size: 30px; margin: 20px; }
-button { font-size: 20px; margin: 5px; }
+/* 全体 */
+body {
+  font-family: -apple-system, sans-serif;
+  text-align: center;
+  background-color: #e0f7ff; /* 薄い水色 */
+  margin: 0;
+  padding: 20px;
+}
+
+/* 見出し */
+h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* カード */
+#card {
+  font-size: 48px;           /* 大きい文字 */
+  margin: 20px auto;
+  padding: 20px;
+  border: 2px solid #0099cc;
+  border-radius: 12px;
+  width: 90%;                /* 画面幅に合わせる */
+  max-width: 360px;          /* iPhone 13 Pro 幅に適合 */
+  min-height: 180px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  word-wrap: break-word;
+}
+
+/* ボタン */
+button {
+  font-size: 20px;
+  margin: 10px 5px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background-color: #0099cc;
+  color: white;
+}
+
+/* チャプター選択ボタン */
+#chapters button {
+  font-size: 18px;
+  margin: 5px;
+  padding: 10px 15px;
+}

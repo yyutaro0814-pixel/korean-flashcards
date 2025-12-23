@@ -7,12 +7,20 @@
 </head>
 <body>
   <h1>韓国語フラッシュカード</h1>
-  <div id="card">
-    <div id="front"></div>
-    <div id="back" style="display:none;"></div>
+
+  <div id="chapter-selection">
+    <h2>チャプターを選択</h2>
+    <div id="chapters"></div>
   </div>
-  <button onclick="flipCard()">めくる</button>
-  <button onclick="nextCard()">次へ</button>
+
+  <div id="flashcard-container" style="display:none;">
+    <div id="card">
+      <div id="front"></div>
+      <div id="back" style="display:none;"></div>
+    </div>
+    <button onclick="nextCard()">次へ</button>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
