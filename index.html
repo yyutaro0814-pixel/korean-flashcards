@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韓国語フラッシュカード</title>
+<style>
+  body {
+    background-color: #e0f7fa;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  .word {
+    font-size: 48px;
+    margin: 20px;
+  }
+  .translation {
+    font-size: 36px;
+    margin: 20px;
+    display: none;
+  }
+  button {
+    font-size: 24px;
+    padding: 10px 20px;
+    margin: 10px;
+  }
+  #backBtn {
+    position: absolute;
+    bottom: 20px;
+  }
+  .chapter-btn {
+    font-size: 24px;
+    margin: 10px;
+    padding: 10px 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="chapterSelect">
+  <h2>チャプターを選んでください</h2>
+  <div id="chapters"></div>
+</div>
+
+<div id="card" style="display:none;">
+  <div class="word" id="word"></div>
+  <div class="translation" id="translation"></div>
+  <button id="nextBtn">次へ</button>
+  <button id="backBtn">チャプター選択に戻る</button>
+</div>
+
+<script>
+// CSVを読み込む関数
+async function loadWords() {
+  const response = await fetch("words.csv");
+  const text = await response.text();
+  const lines = text.trim().split("\n").slice(1); // ヘッダーを除外
+  return lines.map(line => line.split(","));
+}
+
+let words = [];
+let chaptersData = [];
+let currentChapter = [];
+let currentIndex = 0;
+
+const chaptersDiv = document.getElementById("chapters");
+const chapterSelect = document.getElementById("chapterSelect");
+const cardDiv = document.getElementById("card");
+const wordDiv = document.getElementById("word");
+const translationDiv = document.getElementById("translation");
+const nextBtn = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+
+// 単語表示
+function showWord(){
+  wordDiv.textContent = currentChapter[currentIndex][0];
+  translationDiv.textContent = currentChapter[currentIndex][1];
+  translationDiv.style.display = "none";
+}
+
+// チャプター開始
+function startChapter(index){
+  currentChapter = chaptersData[index];
+  currentIndex = 0;
+  chapterSelect.style.display = "none";
+  cardDiv.style.display = "flex";
+  showWord();
+}
+
+// 初期化
+function initChapters(){
+  chaptersData = [];
+  for(let i=0;i<words.length;i+=10){
+    chaptersData.push(words.slice(i,i+10));
+  }
+  chaptersDiv.innerHTML = "";
+  chaptersData.forEach((chap,i)=>{
+    const btn = document.createElement("button");
+    btn.textContent = `チャプター ${i+1}`;
+    btn.className = "chapter-btn";
+    btn.addEventListener("click",()=>startChapter(i));
+    chaptersDiv.appendChild(btn);
+  });
+}
+
+// 次へボタン
+nextBtn.addEventListener("click",()=>{
+  translationDiv.style.display = "block";
+  currentIndex++;
+  if(currentIndex >= currentChapter.length){
+    currentIndex = 0;
+    alert("チャプター終了！");
+  }
+  showWord();
+});
+
+// チャプター選択に戻る
+backBtn.addEventListener("click",()=>{
+  cardDiv.style.display = "none";
+  chapterSelect.style.display = "block";
+});
+
+// タップで韓国語読み上げ
+document.body.addEventListener("click",(e)=>{
+  if(cardDiv.style.display === "flex" && e.target.id !== "nextBtn" && e.target.id !== "backBtn"){
+    const utter = new SpeechSynthesisUtterance(currentChapter[currentIndex][0]);
+    utter.lang = "ko-KR";
+    speechSynthesis.speak(utter);
+  }
+});
+
+// CSV読み込み→初期化
+loadWords().then(data=>{
+  words = data;
+  initChapters();
+});
+</script>
+
+</body>
+</html>
