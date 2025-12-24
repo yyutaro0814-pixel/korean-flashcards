@@ -1,0 +1,43 @@
+<!-- ボタン部分は変更なし -->
+<div class="controls">
+  <button id="speakBtn">🔊 読み上げ</button>
+  <button id="showTranslationBtn">日本語表示</button>
+  <button id="nextBtn">次へ</button>
+</div>
+
+<script>
+// 次へボタン
+nextBtn.addEventListener("click", () => {
+  currentIndex++;
+  if (currentIndex >= currentChapter.length) {
+    // ポップアップなしで1個目に戻る
+    currentIndex = 0;
+  }
+  showWord();
+});
+
+// 日本語表示／非表示切替
+showTranslationBtn.addEventListener("click", () => {
+  if (translationDiv.style.display === "none") {
+    translationDiv.style.display = "block";
+  } else {
+    translationDiv.style.display = "none";
+  }
+});
+
+// ボタン押下感エフェクト
+document.querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("mousedown", () => {
+    btn.style.transform = "scale(0.95)";
+    btn.style.opacity = "0.8";
+  });
+  btn.addEventListener("mouseup", () => {
+    btn.style.transform = "scale(1)";
+    btn.style.opacity = "1";
+  });
+  btn.addEventListener("mouseleave", () => {
+    btn.style.transform = "scale(1)";
+    btn.style.opacity = "1";
+  });
+});
+</script>
