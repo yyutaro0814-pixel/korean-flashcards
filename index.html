@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韓国語フラッシュカード</title>
+<style>
+body {
+  background-color: #e0f7fa;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+#chapterSelect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+.chapter-btn {
+  font-size: 20px;
+  margin: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+#card {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  position: relative;
+}
+.word {
+  font-size: 48px;
+  margin: 20px;
+}
+.translation {
+  font-size: 36px;
+  margin: 20px;
+  display: none;
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+button {
+  font-size: 24px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+#backBtn {
+  position: absolute;
+  bottom: 20px;
+}
+</style>
+</head>
+<body>
+
+<div id="chapterSelect">
+  <h2>チャプターを選んでください</h2>
+  <div id="chapters"></div>
+</div>
+
+<div id="card">
+  <div class="word" id="word"></div>
+  <div class="translation" id="translation"></div>
+  <div class="controls">
+    <button id="speakBtn">🔊 読み上げ</button>
+    <button id="showTranslationBtn">日本語表示</button>
+    <button id="nextBtn">次へ</button>
+  </div>
+  <button id="backBtn">チャプター選択に戻る</button>
+</div>
+
+<script>
+// ===== CSV読み込み =====
+async function loadWords() {
+  try {
+    const response = await fetch("words.csv");
+    const text = await response.text();
+    const lines = text.trim().split("\n").filter(line => line.trim() !== "");
+    return lines.slice(1).map(line => line.split(",").map(cell => cell.trim()));
+  } catch (err) {
+    console.error("CSV読み込みエラー:", err);
+    alert("CSVが読み込めません。words.csv が同階層にあるか確認してください。");
+    return [];
+  }
+}
+
+let words = [];
+let chaptersData = [];
+let currentChapter = [];
+let currentIndex = 0;
+
+const chaptersDiv = document.getElementById("chapters");
+const chapterSelect = document.getElementById("chapterSelect");
+const cardDiv = document.getElementById("card");
+const wordDiv = document.getElementById("word");
+const translationDiv = document.getElementById("translation");
+const nextBtn = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+const speakBtn = document.getElementById("speakBtn");
+const showTranslationBtn = document.getElementById("showTranslationBtn");
+
+// ===== 単語表示 =====
+function showWord() {
+  if (!currentChapter || currentChapter.length === 0) return;
+  const [korean, japanese] = currentChapter[currentIndex];
+  wordDiv.textContent = korean;
+  translationDiv.textContent = japanese;
+  translationDiv.style.display = "none";
+  console.log("表示単語:", korean);
+}
+
+// ===== チャプター開始 =====
+function startChapter(index) {
+  currentChapter = chaptersData[index];
+  currentIndex = 0;
+  chapterSelect.style.display = "none";
+  cardDiv.style.display = "flex";
+  showWord();
+}
+
+// ===== 初期化 =====
+function initChapters() {
+  chaptersData = [];
+  for (let i = 0; i < words.length; i += 10) {
+    chaptersData.push(words.slice(i, i + 10));
+  }
+  chaptersDiv.innerHTML = "";
+  chaptersData.forEach((chap, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = `チャプター ${i+1}`;
+    btn.className = "chapter-btn";
+    btn.addEventListener("click", () => startChapter(i));
+    chaptersDiv.appendChild(btn);
+  });
+}
+
+// ===== 次へボタン =====
+nextBtn.addEventListener("click", () => {
+  currentIndex++;
+  if (currentIndex >= currentChapter.length) currentIndex = 0;
+  showWord();
+});
+
+// ===== 読み上げボタン =====
+speakBtn.addEventListener("click", () => {
+  const currentWord = currentChapter[currentIndex][0];
+  if (!currentWord) return;
+  const utter = new SpeechSynthesisUtterance(currentWord);
+  utter.lang = "ko"; // 韓国語
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+});
+
+// ===== 日本語表示/非表示切替 =====
+showTranslationBtn.addEventListener("click", () => {
+  translationDiv.style.display =
+    translationDiv.style.display === "none" ? "block" : "none";
+});
+
+// ===== チャプター選択に戻る =====
+backBtn.addEventListener("click", () => {
+  cardDiv.style.display = "none";
+  chapterSelect.style.display = "flex";
+});
+
+// ===== ボタン押下感エフェクト =====
+document.querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("mousedown", () => {
+    btn.style.transform = "scale(0.95)";
+    btn.style.opacity = "0.8";
+  });
+  btn.addEventListener("mouseup", () => {
+    btn.style.transform = "scale(1)";
+    btn.style.opacity = "1";
+  });
+  btn.addEventListener("mouseleave", () => {
+    btn.style.transform = "scale(1)";
+    btn.style.opacity = "1";
+  });
+});
+
+// ===== CSV読み込み後初期化 =====
+loadWords().then(data => {
+  words = data;
+  initChapters();
+});
+</script>
+
+</body>
+</html>
