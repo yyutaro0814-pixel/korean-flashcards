@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>韓国語フラッシュカード</title>
+
+<style>
+/* ===== 基本 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #e0f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden; /* ← 全体はスクロール禁止 */
+}
+
+/* ===== チャプター選択（ここだけスクロール可） ===== */
+#chapterSelect {
+  position: fixed;
+  inset: 0;
+  padding:
+    env(safe-area-inset-top)
+    10px
+    env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  overflow-y: auto;     /* ← 重要 */
+  -webkit-overflow-scrolling: touch;
+}
+
+#chapters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.chapter-btn {
+  aspect-ratio: 1 / 1;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+
+.chapter-btn:active {
+  transform: scale(0.94);
+}
+
+/* ===== カード画面 ===== */
+#card {
+  display: none;
+  position: fixed;
+  inset: 0;
+}
+
+/* ===== 単語表示 ===== */
+#wordArea {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  bottom: calc(140px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#word {
+  max-width: 100%;
+  padding: 20px 24px;
+  font-size: 40px;
+  text-align: center;
+  background: #b2ebf2;
+  border: 2px solid #4dd0e1;
+  border-radius: 14px;
+  word-break: break-word;
+}
+
+/* ===== ボタン（常に固定） ===== */
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  padding: 12px 0 16px;
+  background: #e0f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #b2ebf2;
+}
+
+.control-row {
+  display: flex;
+  gap: 14px;
+}
+
+button {
+  font-size: 20px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+
+button:active {
+  transform: scale(0.94);
+}
+
+#backBtn {
+  width: 220px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- チャプター選択 -->
+<div id="chapterSelect">
+  <div id="chapters"></div>
+</div>
+
+<!-- カード -->
+<div id="card">
+  <div id="wordArea">
+    <div id="word"></div>
+  </div>
+
+  <div id="controls">
+    <div class="control-row">
+      <button id="prevBtn">戻る</button>
+      <button id="toggleBtn">日本語</button>
+      <button id="nextBtn">次へ</button>
+    </div>
+    <button id="backBtn">チャプターに戻る</button>
+  </div>
+</div>
+
+<script>
+let words = [];
+let chapters = [];
+let currentChapter = [];
+let index = 0;
+let showJP = false;
+
+const wordDiv = document.getElementById("word");
+const chaptersDiv = document.getElementById("chapters");
+const chapterSelect = document.getElementById("chapterSelect");
+const card = document.getElementById("card");
+
+fetch("words.csv")
+  .then(r => r.text())
+  .then(text => {
+    words = text.split("\n")
+      .map(l => l.split(","))
+      .filter(w => w[0]);
+    for (let i = 0; i < words.length; i += 10) {
+      chapters.push(words.slice(i, i + 10));
+    }
+    renderChapters();
+  });
+
+function renderChapters() {
+  chapters.forEach((_, i) => {
+    const b = document.createElement("button");
+    b.textContent = i + 1;
+    b.className = "chapter-btn";
+    b.onclick = () => startChapter(i);
+    chaptersDiv.appendChild(b);
+  });
+}
+
+function startChapter(i) {
+  currentChapter = chapters[i];
+  index = 0;
+  showJP = false;
+  chapterSelect.style.display = "none";
+  card.style.display = "block";
+  renderWord();
+}
+
+function renderWord() {
+  wordDiv.textContent = showJP
+    ? currentChapter[index][1]
+    : currentChapter[index][0];
+}
+
+prevBtn.onclick = () => {
+  index = (index - 1 + currentChapter.length) % currentChapter.length;
+  showJP = false;
+  renderWord();
+};
+
+nextBtn.onclick = () => {
+  index = (index + 1) % currentChapter.length;
+  showJP = false;
+  renderWord();
+};
+
+toggleBtn.onclick = () => {
+  showJP = !showJP;
+  renderWord();
+};
+
+backBtn.onclick = () => {
+  card.style.display = "none";
+  chapterSelect.style.display = "block";
+};
+</script>
+
+</body>
+</html>
