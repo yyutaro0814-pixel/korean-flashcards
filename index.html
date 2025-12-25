@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>韓国語フラッシュカード</title>
+
+<style>
+/* ===== 基本 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #e0f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+/* ===== 50まとめ選択 ===== */
+#groupSelect {
+  position: fixed;
+  inset: 0;
+  padding:
+    env(safe-area-inset-top)
+    10px
+    env(safe-area-inset-bottom);
+  overflow-y: auto;
+}
+
+.group-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 22px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: none;
+  background: #4dd0e1;
+  color: #033;
+}
+
+/* ===== 詳細チャプター選択 ===== */
+#chapterSelect {
+  display: none;
+  position: fixed;
+  inset: 0;
+  padding:
+    env(safe-area-inset-top)
+    10px
+    env(safe-area-inset-bottom);
+  overflow-y: auto;
+}
+
+#chapters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.chapter-btn {
+  aspect-ratio: 1 / 1;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+}
+
+.chapter-btn.played {
+  background: #b3e5fc;
+}
+
+.chapter-btn.last {
+  background: #f8bbd0;
+}
+
+/* ===== カード画面 ===== */
+#card {
+  display: none;
+  position: fixed;
+  inset: 0;
+}
+
+/* ===== 単語 ===== */
+#wordArea {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  bottom: calc(150px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#word {
+  max-width: 100%;
+  padding: 24px;
+  font-size: 38px;
+  text-align: center;
+  background: #b2ebf2;
+  border-radius: 14px;
+  word-break: break-word;
+}
+
+/* ===== ボタン ===== */
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  padding: 12px 0;
+  background: #e0f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-row {
+  display: flex;
+  gap: 14px;
+}
+
+button {
+  font-size: 20px;
+  padding: 12px 26px;
+  border-radius: 10px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+}
+
+#backBtn {
+  width: 240px;
+}
+
+/* 左上戻る */
+#backGroupBtn {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 10px;
+  font-size: 16px;
+  padding: 8px 14px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 50まとめ -->
+<div id="groupSelect"></div>
+
+<!-- 詳細チャプター -->
+<div id="chapterSelect">
+  <button id="backGroupBtn">もどる</button>
+  <div id="chapters"></div>
+</div>
+
+<!-- カード -->
+<div id="card">
+  <div id="wordArea">
+    <div id="word"></div>
+  </div>
+  <div id="controls">
+    <div class="control-row">
+      <button id="prevBtn">戻る</button>
+      <button id="toggleBtn">日本語</button>
+      <button id="nextBtn">次へ</button>
+    </div>
+    <div class="control-row">
+      <button id="prevChapterBtn">前の章</button>
+      <button id="nextChapterBtn">次の章</button>
+    </div>
+    <button id="backBtn">もどる</button>
+  </div>
+</div>
+
+<script>
+let words = [];
+let chapters = [];
+let currentChapterIndex = 0;
+let currentGroupIndex = 0;
+let index = 0;
+let showJP = false;
+let playedChapters = new Set();
+let lastChapter = null;
+
+const wordDiv = document.getElementById("word");
+const groupSelect = document.getElementById("groupSelect");
+const chapterSelect = document.getElementById("chapterSelect");
+const chaptersDiv = document.getElementById("chapters");
+const card = document.getElementById("card");
+
+fetch("words.csv")
+  .then(r => r.text())
+  .then(text => {
+    words = text.split("\n").map(l => l.split(",")).filter(w => w[0]);
+    for (let i = 0; i < words.length; i += 10) {
+      chapters.push(words.slice(i, i + 10));
+    }
+    renderGroups();
+  });
+
+function renderGroups() {
+  groupSelect.innerHTML = "";
+  const totalGroups = Math.ceil(chapters.length / 5);
+  for (let i = 0; i < totalGroups; i++) {
+    const start = i * 50 + 1;
+    const end = Math.min((i + 1) * 50, words.length);
+    const b = document.createElement("button");
+    b.className = "group-btn";
+    b.textContent = `${start}-${end}`;
+    b.onclick = () => openGroup(i);
+    groupSelect.appendChild(b);
+  }
+}
+
+function openGroup(g) {
+  currentGroupIndex = g;
+  groupSelect.style.display = "none";
+  chapterSelect.style.display = "block";
+  renderChapters();
+}
+
+function renderChapters() {
+  chaptersDiv.innerHTML = "";
+  const start = currentGroupIndex * 5;
+  const end = Math.min(start + 5, chapters.length);
+  for (let i = start; i < end; i++) {
+    const b = document.createElement("button");
+    b.textContent = i + 1;
+    b.className = "chapter-btn";
+    if (playedChapters.has(i)) b.classList.add("played");
+    if (lastChapter === i) b.classList.add("last");
+    b.onclick = () => startChapter(i);
+    chaptersDiv.appendChild(b);
+  }
+}
+
+function startChapter(i) {
+  currentChapterIndex = i;
+  index = 0;
+  showJP = false;
+  playedChapters.add(i);
+  lastChapter = i;
+  chapterSelect.style.display = "none";
+  card.style.display = "block";
+  renderWord();
+}
+
+function renderWord() {
+  wordDiv.textContent = showJP
+    ? chapters[currentChapterIndex][index][1]
+    : chapters[currentChapterIndex][index][0];
+}
+
+prevBtn.onclick = () => {
+  index = (index - 1 + chapters[currentChapterIndex].length) % chapters[currentChapterIndex].length;
+  showJP = false;
+  renderWord();
+};
+
+nextBtn.onclick = () => {
+  index = (index + 1) % chapters[currentChapterIndex].length;
+  showJP = false;
+  renderWord();
+};
+
+toggleBtn.onclick = () => {
+  showJP = !showJP;
+  renderWord();
+};
+
+prevChapterBtn.onclick = () => {
+  if (currentChapterIndex > 0) startChapter(currentChapterIndex - 1);
+};
+
+nextChapterBtn.onclick = () => {
+  if (currentChapterIndex < chapters.length - 1) startChapter(currentChapterIndex + 1);
+};
+
+backBtn.onclick = () => {
+  card.style.display = "none";
+  currentGroupIndex = Math.floor(currentChapterIndex / 5);
+  openGroup(currentGroupIndex);
+};
+
+backGroupBtn.onclick = () => {
+  chapterSelect.style.display = "none";
+  groupSelect.style.display = "block";
+};
+</script>
+
+</body>
+</html>
