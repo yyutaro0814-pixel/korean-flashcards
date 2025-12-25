@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>韓国語学習</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #e0f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+.screen {
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  display: none;
+}
+
+/* ===== モード選択 ===== */
+#modeSelect {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+
+.mode-btn {
+  font-size: 26px;
+  padding: 24px;
+  border-radius: 16px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 4px 6px rgba(0,0,0,.25);
+}
+.mode-btn:active { transform: scale(.95); }
+
+/* ===== クイズ ===== */
+#quizWord {
+  font-size: 40px;
+  text-align: center;
+  margin: 40px 0;
+  background: #b2ebf2;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+#choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.choice {
+  font-size: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  background: #ffffff;
+  box-shadow: 0 3px 5px rgba(0,0,0,.2);
+}
+.choice.correct { background: #b9f6ca; }
+.choice.wrong { background: #ffcdd2; }
+
+#quizBack {
+  margin-top: 20px;
+}
+
+/* ===== 共通 ===== */
+button { cursor: pointer; }
+</style>
+</head>
+
+<body>
+
+<!-- モード選択 -->
+<div id="modeSelect" class="screen" style="display:flex">
+  <button class="mode-btn" onclick="startFlash()">フラッシュカード</button>
+  <button class="mode-btn" onclick="startQuiz()">4択クイズ</button>
+</div>
+
+<!-- ===== クイズ画面 ===== -->
+<div id="quiz" class="screen">
+  <div id="quizWord"></div>
+  <div id="choices"></div>
+  <button id="quizBack" onclick="backToMenu()">もどる</button>
+</div>
+
+<script>
+let words = [];
+let currentQuiz = null;
+
+/* ===== CSV 読み込み ===== */
+fetch("words.csv")
+  .then(r => r.text())
+  .then(text => {
+    words = text.trim().split("\n")
+      .map(l => l.split(","))
+      .filter(w => w.length >= 2);
+  });
+
+/* ===== モード遷移 ===== */
+function hideAll() {
+  document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+}
+
+function backToMenu() {
+  hideAll();
+  document.getElementById("modeSelect").style.display = "flex";
+}
+
+/* ===== フラッシュカード（既存） ===== */
+function startFlash() {
+  alert("※ フラッシュカードは既存実装を使用してください");
+}
+
+/* ===== クイズ ===== */
+function startQuiz() {
+  hideAll();
+  document.getElementById("quiz").style.display = "block";
+  nextQuiz();
+}
+
+function nextQuiz() {
+  const q = words[Math.floor(Math.random() * words.length)];
+  currentQuiz = q;
+
+  document.getElementById("quizWord").textContent = q[0];
+
+  // 選択肢生成
+  let choices = [q[1]];
+  while (choices.length < 4) {
+    const w = words[Math.floor(Math.random() * words.length)][1];
+    if (!choices.includes(w)) choices.push(w);
+  }
+
+  choices.sort(() => Math.random() - 0.5);
+
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+
+  choices.forEach(c => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.textContent = c;
+    b.onclick = () => checkAnswer(b, c === q[1]);
+    box.appendChild(b);
+  });
+}
+
+function checkAnswer(btn, correct) {
+  document.querySelectorAll(".choice").forEach(b => b.disabled = true);
+  btn.classList.add(correct ? "correct" : "wrong");
+
+  if (!correct) {
+    document.querySelectorAll(".choice").forEach(b => {
+      if (b.textContent === currentQuiz[1])
+        b.classList.add("correct");
+    });
+  }
+
+  setTimeout(nextQuiz, 800);
+}
+</script>
+
+</body>
+</html>
