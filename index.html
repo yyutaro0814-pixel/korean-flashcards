@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Korean Flashcards</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background: #eaf6fb;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .screen {
+    display: none;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* ===== グリッド ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    justify-items: center;
+  }
+
+  .box {
+    width: 100%;
+    padding: 14px 0;
+    background: #ffffff;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .box:active {
+    transform: scale(0.96);
+  }
+
+  /* ===== カード画面 ===== */
+  #cardScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 120px;
+  }
+
+  #card {
+    width: 90%;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    font-size: 32px;
+    text-align: center;
+    word-break: break-word;
+    white-space: normal;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    margin-top: 40px;
+  }
+
+  /* ===== ボタンバー ===== */
+  #controlBar {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 12px;
+  }
+
+  button {
+    min-width: 90px;
+    padding: 14px 0;
+    font-size: 16px;
+    border-radius: 14px;
+    border: none;
+    background: #ffffff;
+    box-shadow: 0 4px 0 #aacddd;
+    cursor: pointer;
+  }
+
+  button:active {
+    box-shadow: 0 1px 0 #aacddd;
+    transform: translateY(3px);
+  }
+
+  #backToChapterBtn {
+    position: fixed;
+    bottom: 80px;
+    width: 90%;
+    max-width: 360px;
+    padding: 12px 0;
+    background: #d9eef8;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ===== 50ずつ ===== -->
+<div id="groupScreen" class="screen">
+  <div class="grid" id="groupGrid"></div>
+</div>
+
+<!-- ===== 詳細チャプター ===== -->
+<div id="chapterScreen" class="screen">
+  <button onclick="showGroupView()">← 戻る</button>
+  <div class="grid" id="chapterGrid" style="margin-top:16px;"></div>
+</div>
+
+<!-- ===== カード ===== -->
+<div id="cardScreen" class="screen">
+  <div id="card"></div>
+
+  <button id="backToChapterBtn" onclick="showChapterView()">チャプターに戻る</button>
+
+  <div id="controlBar">
+    <button onclick="prevCard()">戻る</button>
+    <button onclick="toggleLang()">日本語</button>
+    <button onclick="nextCard()">次へ</button>
+  </div>
+</div>
+
+<script>
+/* ===== 仮データ（例） ===== */
+const chapters = Array.from({ length: 120 }, (_, i) => ({
+  ko: `한국어 예문 ${i+1}`,
+  ja: `日本語訳の例文 ${i+1}`
+}));
+
+let currentGroup = 0;
+let currentChapter = 0;
+let showJapanese = false;
+
+/* ===== 画面制御 ===== */
+function showGroupView() {
+  hideAll();
+  document.getElementById("groupScreen").style.display = "block";
+}
+
+function showChapterView() {
+  hideAll();
+  document.getElementById("chapterScreen").style.display = "block";
+  renderChapters();
+}
+
+function showCardView() {
+  hideAll();
+  document.getElementById("cardScreen").style.display = "flex";
+  renderCard();
+}
+
+function hideAll() {
+  document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+}
+
+/* ===== 描画 ===== */
+function renderGroups() {
+  const grid = document.getElementById("groupGrid");
+  grid.innerHTML = "";
+  const groups = Math.ceil(chapters.length / 50);
+  for (let i = 0; i < groups; i++) {
+    const div = document.createElement("div");
+    div.className = "box";
+    div.textContent = `${i*50+1}–${Math.min((i+1)*50, chapters.length)}`;
+    div.onclick = () => {
+      currentGroup = i;
+      showChapterView();
+    };
+    grid.appendChild(div);
+  }
+}
+
+function renderChapters() {
+  const grid = document.getElementById("chapterGrid");
+  grid.innerHTML = "";
+  const start = currentGroup * 50;
+  const end = Math.min(start + 50, chapters.length);
+  for (let i = start; i < end; i++) {
+    const div = document.createElement("div");
+    div.className = "box";
+    div.textContent = i + 1;
+    div.onclick = () => {
+      currentChapter = i;
+      showJapanese = false;
+      showCardView();
+    };
+    grid.appendChild(div);
+  }
+}
+
+function renderCard() {
+  const card = document.getElementById("card");
+  card.textContent = showJapanese
+    ? chapters[currentChapter].ja
+    : chapters[currentChapter].ko;
+}
+
+/* ===== 操作 ===== */
+function toggleLang() {
+  showJapanese = !showJapanese;
+  renderCard();
+}
+
+function nextCard() {
+  currentChapter = (currentChapter + 1) % chapters.length;
+  showJapanese = false;
+  renderCard();
+}
+
+function prevCard() {
+  currentChapter =
+    (currentChapter - 1 + chapters.length) % chapters.length;
+  showJapanese = false;
+  renderCard();
+}
+
+/* 初期表示 */
+renderGroups();
+showGroupView();
+</script>
+
+</body>
+</html>
