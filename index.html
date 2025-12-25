@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>韓国語フラッシュカード</title>
+<style>
+/* ===== 基本 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #e0f7fa;
+  overflow: hidden;
+}
+
+/* ===== 50まとめチャプター選択 ===== */
+#chapterGroupSelect {
+  display: none;
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top) 10px 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.group-btn {
+  width: 100%;
+  padding: 14px 0;
+  margin-bottom: 6px;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+.group-btn:active { transform: scale(0.94); }
+
+/* ===== 詳細チャプター選択 ===== */
+#chapterSelect {
+  display: none;
+  position: fixed;
+  inset: 0;
+  padding: env(safe-area-inset-top) 10px 10px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+#chapters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  justify-items: center;
+}
+.chapter-btn {
+  aspect-ratio: 1/1;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+.chapter-btn.played { background: #b2ebf2; }
+.chapter-btn.recent { background: #ffb6c1; }
+.chapter-btn:active { transform: scale(0.94); }
+
+/* ===== カード ===== */
+#card {
+  display: none;
+  position: fixed;
+  inset: 0;
+}
+#wordArea {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  bottom: calc(140px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#word {
+  max-width: 100%;
+  padding: 20px 24px;
+  font-size: 40px;
+  text-align: center;
+  background: #b2ebf2;
+  border: 2px solid #4dd0e1;
+  border-radius: 14px;
+  word-break: break-word;
+}
+
+/* ===== ボタン ===== */
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  padding: 12px 0 16px;
+  background: #e0f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #b2ebf2;
+}
+.control-row {
+  display: flex;
+  gap: 14px;
+}
+button {
+  font-size: 20px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+button:active { transform: scale(0.94); }
+#backBtn { width: 220px; }
+</style>
+</head>
+<body>
+
+<!-- 50まとめチャプター選択 -->
+<div id="chapterGroupSelect"></div>
+
+<!-- 詳細チャプター選択 -->
+<div id="chapterSelect">
+  <div id="chapters"></div>
+</div>
+
+<!-- カード -->
+<div id="card">
+  <div id="wordArea"><div id="word"></div></div>
+  <div id="controls">
+    <div class="control-row">
+      <button id="prevBtn">戻る</button>
+      <button id="toggleBtn">日本語</button>
+      <button id="nextBtn">次へ</button>
+    </div>
+    <button id="backBtn">チャプターに戻る</button>
+  </div>
+</div>
+
+<script>
+let words = [];
+let chapters = [];
+let currentChapter = [];
+let index = 0;
+let showJP = false;
+let recentChapter = null;
+
+const wordDiv = document.getElementById("word");
+const chaptersDiv = document.getElementById("chapters");
+const chapterGroupDiv = document.getElementById("chapterGroupSelect");
+const chapterSelect = document.getElementById("chapterSelect");
+const card = document.getElementById("card");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const toggleBtn = document.getElementById("toggleBtn");
+const backBtn = document.getElementById("backBtn");
+
+// CSV読み込み
+fetch("words.csv")
+  .then(r => r.text())
+  .then(text => {
+    words = text.split("\n")
+      .map(l => l.split(","))
+      .filter(w => w[0]);
+    for (let i = 0; i < words.length; i += 10) {
+      chapters.push(words.slice(i, i + 10));
+    }
+    renderChapterGroups();
+  });
+
+// 50まとめチャプター
+function renderChapterGroups() {
+  const groupCount = Math.ceil(chapters.length / 50);
+  for (let i = 0; i < groupCount; i++) {
+    const b = document.createElement("button");
+    b.textContent = `${i*50+1}-${Math.min((i+1)*50, chapters.length)}`;
+    b.className = "group-btn";
+    b.onclick = () => renderChapters(i);
+    chapterGroupDiv.appendChild(b);
+  }
+  chapterGroupDiv.style.display = "block";
+}
+
+// 詳細チャプター選択
+function renderChapters(groupIndex) {
+  chaptersDiv.innerHTML = "";
+  const start = groupIndex*50;
+  const end = Math.min(start+50, chapters.length);
+  for (let i = start; i < end; i++) {
+    const b = document.createElement("button");
+    b.textContent = i+1;
+    b.className = "chapter-btn";
+    if(i === recentChapter) b.classList.add("recent");
+    else if(localStorage.getItem(`chapter${i}`)) b.classList.add("played");
+    b.onclick = () => startChapter(i);
+    chaptersDiv.appendChild(b);
+  }
+  chapterGroupDiv.style.display = "none";
+  chapterSelect.style.display = "block";
+  chapterSelect.scrollTop = 0;
+}
+
+// カード開始
+function startChapter(i) {
+  currentChapter = chapters[i];
+  index = 0;
+  showJP = false;
+  recentChapter = i;
+  chapterSelect.style.display = "none";
+  card.style.display = "block";
+  renderWord();
+}
+
+// 単語描画
+function renderWord() {
+  wordDiv.textContent = showJP
+    ? currentChapter[index][1]
+    : currentChapter[index][0];
+}
+
+// ボタン操作
+prevBtn.onclick = () => {
+  index = (index - 1 + currentChapter.length) % currentChapter.length;
+  showJP = false;
+  renderWord();
+};
+nextBtn.onclick = () => {
+  index = (index + 1) % currentChapter.length;
+  showJP = false;
+  renderWord();
+};
+toggleBtn.onclick = () => {
+  showJP = !showJP;
+  renderWord();
+};
+backBtn.onclick = () => {
+  card.style.display = "none";
+  const groupIndex = Math.floor(recentChapter / 50);
+  renderChapters(groupIndex);
+};
+</script>
+</body>
+</html>
