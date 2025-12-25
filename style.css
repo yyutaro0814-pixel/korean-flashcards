@@ -1,0 +1,112 @@
+/* ===== 基本 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #e0f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+/* ===== チャプター選択（ここだけスクロール可） ===== */
+#chapterSelect {
+  position: fixed;
+  inset: 0;
+  padding:
+    env(safe-area-inset-top)
+    10px
+    env(safe-area-inset-bottom);
+  box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#chapters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.chapter-btn {
+  aspect-ratio: 1 / 1;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+
+.chapter-btn:active {
+  transform: scale(0.94);
+}
+
+/* ===== カード画面 ===== */
+#card {
+  display: none;
+  position: fixed;
+  inset: 0;
+}
+
+/* ===== 単語表示 ===== */
+#wordArea {
+  position: absolute;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  bottom: calc(140px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#word {
+  max-width: 100%;
+  padding: 20px 24px;
+  font-size: 40px;
+  text-align: center;
+  background: #b2ebf2;
+  border: 2px solid #4dd0e1;
+  border-radius: 14px;
+  word-break: break-word;
+}
+
+/* ===== 操作ボタン（常に固定） ===== */
+#controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: env(safe-area-inset-bottom);
+  padding: 12px 0 16px;
+  background: #e0f7fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #b2ebf2;
+}
+
+.control-row {
+  display: flex;
+  gap: 14px;
+}
+
+button {
+  font-size: 20px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #81d4fa;
+  color: #033;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+}
+
+button:active {
+  transform: scale(0.94);
+}
+
+#backBtn {
+  width: 220px;
+}
